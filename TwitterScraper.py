@@ -1,12 +1,14 @@
-__author__ = 'tkd29'
-from abc import ABCMeta
-from urllib import urlencode, urlopen
+import urllib2
 import json
+import datetime
+from abc import ABCMeta
+from urllib import urlencode
 from abc import abstractmethod
 from urlparse import urlunparse
 from bs4 import BeautifulSoup
-import datetime
 from time import sleep
+
+__author__ = 'Tom Dickinson'
 
 
 class TwitterSearch:
@@ -60,7 +62,12 @@ class TwitterSearch:
         :return: A JSON object with data from Twitter
         """
         try:
-            response = urlopen(url)
+            # Specify a user agent to prevent Twitter from returning a profile card
+            headers = {
+                'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36'
+            }
+            req = urllib2.Request(url, headers=headers)
+            response = urllib2.urlopen(req)
             data = json.loads(response.read())
             return data
 
@@ -79,7 +86,7 @@ class TwitterSearch:
         :param items_html: The HTML block with tweets
         :return: A JSON list of tweets
         """
-        soup = BeautifulSoup(items_html)
+        soup = BeautifulSoup(items_html, "lxml")
         tweets = []
         for li in soup.find_all("li", class_='js-stream-item'):
 
@@ -138,10 +145,10 @@ class TwitterSearch:
         """
 
         params = {
-            # Query Param
-            'q': query,
             # Type Param
-            't': 'tweets'
+            'f': 'tweets',
+            # Query Param
+            'q': query
         }
 
         # If our max_position param is not None, we add it to the parameters
