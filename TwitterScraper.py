@@ -86,7 +86,7 @@ class TwitterSearch:
         :param items_html: The HTML block with tweets
         :return: A JSON list of tweets
         """
-        soup = BeautifulSoup(items_html, "lxml")
+        soup = BeautifulSoup(items_html, "html")
         tweets = []
         for li in soup.find_all("li", class_='js-stream-item'):
 
