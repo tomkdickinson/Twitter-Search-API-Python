@@ -108,7 +108,7 @@ class TwitterSearch:
             # Tweet Text
             text_p = li.find("p", class_="tweet-text")
             if text_p is not None:
-                tweet['text'] = text_p.get_text()
+                tweet['text'] = text_p.get_text().encode('utf-8')
 
             # Tweet User ID, User Screen Name, User Name
             user_details_div = li.find("div", class_="tweet")
