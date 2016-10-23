@@ -1,10 +1,9 @@
-import urllib2
+import requests
 import json
 import datetime
 from abc import ABCMeta
-from urllib import urlencode
 from abc import abstractmethod
-from urlparse import urlunparse
+from urllib import parse
 from bs4 import BeautifulSoup
 from time import sleep
 
@@ -64,18 +63,19 @@ class TwitterSearch:
         try:
             # Specify a user agent to prevent Twitter from returning a profile card
             headers = {
-                'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36'
+                'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.'
+                              '86 Safari/537.36'
             }
-            req = urllib2.Request(url, headers=headers)
-            response = urllib2.urlopen(req)
-            data = json.loads(response.read())
+            req = requests.get(url, headers=headers)
+            # response = urllib2.urlopen(req)
+            data = json.loads(req.text)
             return data
 
         # If we get a ValueError exception due to a request timing out, we sleep for our error delay, then make
         # another attempt
         except ValueError as e:
-            print e.message
-            print "Sleeping for %i" % self.error_delay
+            print(e)
+            print("Sleeping for %i" % self.error_delay)
             sleep(self.error_delay)
             return self.execute_search(url)
 
@@ -108,7 +108,7 @@ class TwitterSearch:
             # Tweet Text
             text_p = li.find("p", class_="tweet-text")
             if text_p is not None:
-                tweet['text'] = text_p.get_text().encode('utf-8')
+                tweet['text'] = text_p.get_text()
 
             # Tweet User ID, User Screen Name, User Name
             user_details_div = li.find("div", class_="tweet")
@@ -155,8 +155,8 @@ class TwitterSearch:
         if max_position is not None:
             params['max_position'] = max_position
 
-        url_tupple = ('https', 'twitter.com', '/i/search/timeline', '', urlencode(params), '')
-        return urlunparse(url_tupple)
+        url_tupple = ('https', 'twitter.com', '/i/search/timeline', '', parse.urlencode(params), '')
+        return parse.urlunparse(url_tupple)
 
     @abstractmethod
     def save_tweets(self, tweets):
@@ -190,7 +190,7 @@ class TwitterSearchImpl(TwitterSearch):
             if tweet['created_at'] is not None:
                 t = datetime.datetime.fromtimestamp((tweet['created_at']/1000))
                 fmt = "%Y-%m-%d %H:%M:%S"
-                print "%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text'])
+                print("%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text']))
 
             # When we've reached our max limit, return False so collection stops
             if self.counter >= self.max_tweets:
