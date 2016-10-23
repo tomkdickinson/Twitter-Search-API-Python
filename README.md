@@ -11,3 +11,4 @@ While written for the Java version, the associated blog post for pagination on T
 
 ## Required Libraries
 * BeautifulSoup 4
+* Requests
