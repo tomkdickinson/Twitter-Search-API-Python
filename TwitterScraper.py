@@ -6,6 +6,7 @@ from abc import abstractmethod
 from urllib import parse
 from bs4 import BeautifulSoup
 from time import sleep
+import logging as log
 
 __author__ = 'Tom Dickinson'
 
@@ -73,9 +74,9 @@ class TwitterSearch:
 
         # If we get a ValueError exception due to a request timing out, we sleep for our error delay, then make
         # another attempt
-        except ValueError as e:
-            print(e)
-            print("Sleeping for %i" % self.error_delay)
+        except Exception as e:
+            log.error(e)
+            log.error("Sleeping for %i" % self.error_delay)
             sleep(self.error_delay)
             return self.execute_search(url)
 
@@ -86,7 +87,7 @@ class TwitterSearch:
         :param items_html: The HTML block with tweets
         :return: A JSON list of tweets
         """
-        soup = BeautifulSoup(items_html, "html")
+        soup = BeautifulSoup(items_html, "html.parser")
         tweets = []
         for li in soup.find_all("li", class_='js-stream-item'):
 
@@ -190,7 +191,7 @@ class TwitterSearchImpl(TwitterSearch):
             if tweet['created_at'] is not None:
                 t = datetime.datetime.fromtimestamp((tweet['created_at']/1000))
                 fmt = "%Y-%m-%d %H:%M:%S"
-                print("%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text']))
+                log.info("%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text']))
 
             # When we've reached our max limit, return False so collection stops
             if self.counter >= self.max_tweets:
@@ -200,5 +201,6 @@ class TwitterSearchImpl(TwitterSearch):
 
 
 if __name__ == '__main__':
+    log.basicConfig(level=log.INFO)
     twit = TwitterSearchImpl(0, 5, 5000)
     twit.search("Babylon 5")
