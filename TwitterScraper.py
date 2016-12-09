@@ -6,14 +6,13 @@ from abc import abstractmethod
 from urllib import parse
 from bs4 import BeautifulSoup
 from time import sleep
+from concurrent.futures import ThreadPoolExecutor
 import logging as log
 
 __author__ = 'Tom Dickinson'
 
 
-class TwitterSearch:
-
-    __metaclass__ = ABCMeta
+class TwitterSearch(metaclass=ABCMeta):
 
     def __init__(self, rate_delay, error_delay=5):
         """
@@ -24,6 +23,9 @@ class TwitterSearch:
         self.error_delay = error_delay
 
     def search(self, query):
+        self.perform_search(query)
+
+    def perform_search(self, query):
         """
         Scrape items from twitter
         :param query:   Query to search Twitter with. Takes form of queries constructed with using Twitters
@@ -194,13 +196,72 @@ class TwitterSearchImpl(TwitterSearch):
                 log.info("%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text']))
 
             # When we've reached our max limit, return False so collection stops
-            if self.counter >= self.max_tweets:
+            if self.max_tweets is not None and self.counter >= self.max_tweets:
                 return False
+
+        return True
+
+
+class TwitterSlicer(TwitterSearch):
+    """
+    Inspired by: https://github.com/simonlindgren/TwitterScraper/blob/master/TwitterSucker.py
+    The concept is to have an implementation that actually splits the query into multiple days.
+    The only additional parameters a user has to input, is a minimum date, and a maximum date.
+    This method also supports parallel scraping.
+    """
+    def __init__(self, rate_delay, error_delay, since, until, n_threads=1):
+        super(TwitterSlicer, self).__init__(rate_delay, error_delay)
+        self.since = since
+        self.until = until
+        self.n_threads = n_threads
+        self.counter = 0
+
+    def search(self, query):
+        n_days = (self.until - self.since).days
+        tp = ThreadPoolExecutor(max_workers=self.n_threads)
+        for i in range(0, n_days):
+            since_query = self.since + datetime.timedelta(days=i)
+            until_query = self.since + datetime.timedelta(days=(i + 1))
+            day_query = "%s since:%s until:%s" % (query, since_query.strftime("%Y-%m-%d"),
+                                                  until_query.strftime("%Y-%m-%d"))
+            tp.submit(self.perform_search, day_query)
+        tp.shutdown(wait=True)
+
+    def save_tweets(self, tweets):
+        """
+        Just prints out tweets
+        :return: True always
+        """
+        for tweet in tweets:
+            # Lets add a counter so we only collect a max number of tweets
+            self.counter += 1
+            if tweet['created_at'] is not None:
+                t = datetime.datetime.fromtimestamp((tweet['created_at']/1000))
+                fmt = "%Y-%m-%d %H:%M:%S"
+                log.info("%i [%s] - %s" % (self.counter, t.strftime(fmt), tweet['text']))
 
         return True
 
 
 if __name__ == '__main__':
     log.basicConfig(level=log.INFO)
-    twit = TwitterSearchImpl(0, 5, 5000)
-    twit.search("Babylon 5")
+
+    search_query = "Babylon 5"
+    rate_delay_seconds = 0
+    error_delay_seconds = 5
+
+    # Example of using TwitterSearch
+    twit = TwitterSearchImpl(rate_delay_seconds, error_delay_seconds, None)
+    twit.search(search_query)
+
+    # Example of using TwitterSlice
+    select_tweets_since = datetime.datetime.strptime("2016-10-01", '%Y-%m-%d')
+    select_tweets_until = datetime.datetime.strptime("2016-12-01", '%Y-%m-%d')
+    threads = 10
+
+    twitSlice = TwitterSlicer(rate_delay_seconds, error_delay_seconds, select_tweets_since, select_tweets_until,
+                              threads)
+    twitSlice.search(search_query)
+
+    print("TwitterSearch collected %i" % twit.counter)
+    print("TwitterSlicer collected %i" % twitSlice.counter)
