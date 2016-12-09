@@ -1,5 +1,9 @@
 # Twitter-Search-API-Python
-A python implementation of the Twitter Search Example
+A python implementation of the Twitter Search Example.
+
+The master branch has now been merged with the python3 branch.
+
+For those who still need the python2 implementation, there is now a python2 branch with the code on it.
 
 This Python script is an implementation of it's Java version https://github.com/tomkdickinson/TwitterSearchAPI.
 
