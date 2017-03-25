@@ -51,7 +51,10 @@ class TwitterSearch(metaclass=ABCMeta):
             # Our max tweet is the last tweet in the list
             max_tweet = tweets[-1]
             if min_tweet['tweet_id'] is not max_tweet['tweet_id']:
-                max_position = "TWEET-%s-%s" % (max_tweet['tweet_id'], min_tweet['tweet_id'])
+                if "min_position" in response.keys():
+                    max_position = response['min_position']
+                else:
+                    max_position = "TWEET-%s-%s" % (max_tweet['tweet_id'], min_tweet['tweet_id'])
                 url = self.construct_url(query, max_position=max_position)
                 # Sleep for our rate_delay
                 sleep(self.rate_delay)
