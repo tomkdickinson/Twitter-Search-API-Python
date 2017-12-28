@@ -173,7 +173,6 @@ class TwitterSearch(object):
             params['max_position'] = max_position
 
         url_tupple = ('https', 'twitter.com', '/i/search/timeline', '', urlencode(params), '')
-        print url_tupple
         return urlunparse(url_tupple)
 
     @abstractmethod
