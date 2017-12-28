@@ -1,18 +1,29 @@
-import requests
+from __future__ import print_function
 import json
 import datetime
-from abc import ABCMeta
-from abc import abstractmethod
-from urllib import parse
-from bs4 import BeautifulSoup
+import logging as log
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
-import logging as log
+
+# Python 2 and 3: alternative 4
+try:
+    from urllib.parse import urlparse, urlencode, urlunparse
+except ImportError:
+    # Python 2 imports
+    from urlparse import urlparse, urlunparse
+    from urllib import urlencode
+
+import requests
+from abc import ABCMeta
+from abc import abstractmethod
+from bs4 import BeautifulSoup
 
 __author__ = 'Tom Dickinson'
 
 
-class TwitterSearch(metaclass=ABCMeta):
+class TwitterSearch(object):
+
+    __meta__ = ABCMeta
 
     def __init__(self, rate_delay, error_delay=5):
         """
@@ -161,8 +172,9 @@ class TwitterSearch(metaclass=ABCMeta):
         if max_position is not None:
             params['max_position'] = max_position
 
-        url_tupple = ('https', 'twitter.com', '/i/search/timeline', '', parse.urlencode(params), '')
-        return parse.urlunparse(url_tupple)
+        url_tupple = ('https', 'twitter.com', '/i/search/timeline', '', urlencode(params), '')
+        print url_tupple
+        return urlunparse(url_tupple)
 
     @abstractmethod
     def save_tweets(self, tweets):
