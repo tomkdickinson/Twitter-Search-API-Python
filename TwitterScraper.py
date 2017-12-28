@@ -5,7 +5,6 @@ import logging as log
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 
-# Python 2 and 3: alternative 4
 try:
     from urllib.parse import urlparse, urlencode, urlunparse
 except ImportError:
